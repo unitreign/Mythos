@@ -201,6 +201,16 @@ local function build_chapters_rows(info)
         on_next   = _page < max_pages and function()
             _page = _page + 1; Detail.rebuild(info, true)
         end or nil,
+        on_first  = _page > 1 and function()
+            _page = 1; Detail.rebuild(info, true)
+        end or nil,
+        on_last   = _page < max_pages and function()
+            _page = max_pages; Detail.rebuild(info, true)
+        end or nil,
+        on_jump   = function(n)
+            _page = math.max(1, math.min(max_pages, math.floor(n)))
+            Detail.rebuild(info, true)
+        end,
     } or nil
 
     return rows, nav

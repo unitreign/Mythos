@@ -339,33 +339,94 @@ end
 -- Height of the emitted widget = HAIRLINE + NAV_ROW_H.
 
 function P.makeNavBar(nav)
-    local W     = P.W
-    local H     = P.NAV_ROW_H
-    local BTN_W = Screen:scaleBySize(72)
-    local mid_w = W - 2 * BTN_W
-    local bface = Font:getFace("cfont", 24)
-    local lface = Font:getFace("cfont", 15)
+    local W = P.W
+    local H = P.NAV_ROW_H
 
-    local function arrow(glyph, cb)
+    -- Shared helper: button frame of explicit width/height, optionally tappable
+    local function cell(w, lbl_str, face, cb)
         local color = cb and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_LIGHT_GRAY
-        local lbl   = TextWidget:new{ text = glyph, face = bface, fgcolor = color }
+        local lbl   = TextWidget:new{ text = lbl_str, face = face, fgcolor = color }
         local f     = FrameContainer:new{
-            bordersize = 0, padding = 0, width = BTN_W, height = H,
+            bordersize = 0, padding = 0, width = w, height = H,
             background = Blitbuffer.COLOR_WHITE,
-            CenterContainer:new{ dimen = Geom:new{ w = BTN_W, h = H }, lbl },
+            CenterContainer:new{ dimen = Geom:new{ w = w, h = H }, lbl },
         }
         return cb and P.wrapTappable(f, cb) or f
     end
 
-    local page_str = nav.max_pages
-        and (tostring(nav.page) .. " / " .. tostring(nav.max_pages))
-        or  ("p." .. tostring(nav.page))
-    local mid_lbl = TextWidget:new{ text = page_str, face = lface, fgcolor = Blitbuffer.COLOR_GRAY }
-    local mid = FrameContainer:new{
-        bordersize = 0, padding = 0, width = mid_w, height = H,
-        background = Blitbuffer.COLOR_WHITE,
-        CenterContainer:new{ dimen = Geom:new{ w = mid_w, h = H }, mid_lbl },
-    }
+    local row
+
+    if nav.max_pages then
+        -- Extended layout (known page count): «  ‹N  ‹   N/M   ›  N›  »
+        local ff_w   = Screen:scaleBySize(36)   -- « and »
+        local jmp_w  = Screen:scaleBySize(46)   -- ‹N and N›
+        local nav_w  = Screen:scaleBySize(44)   -- ‹ and ›
+        local mid_w  = W - 2 * (ff_w + jmp_w + nav_w)
+
+        local ff_face  = Font:getFace("cfont", 17)
+        local jmp_face = Font:getFace("cfont", 15)
+        local arr_face = Font:getFace("cfont", 22)
+        local lbl_face = Font:getFace("cfont", 15)
+
+        -- Jump-to-page dialog (shared by ‹N and N›)
+        local function open_jump()
+            local InputDialog = require("ui/widget/inputdialog")
+            local dlg
+            dlg = InputDialog:new{
+                title   = "Go to page (1 – " .. tostring(nav.max_pages) .. ")",
+                input_type = "number",
+                buttons = {{
+                    { text = "Go", is_enter_default = true, callback = function()
+                        local n = tonumber(dlg:getInputText())
+                        UIManager:close(dlg)
+                        if n then nav.on_jump(n) end
+                    end },
+                    { text = "Cancel", callback = function() UIManager:close(dlg) end },
+                }},
+            }
+            UIManager:show(dlg)
+        end
+
+        local jmp_cb = nav.on_jump and open_jump or nil
+
+        local page_str = tostring(nav.page) .. " / " .. tostring(nav.max_pages)
+        local mid_lbl  = TextWidget:new{ text = page_str, face = lbl_face, fgcolor = Blitbuffer.COLOR_GRAY }
+        local mid = FrameContainer:new{
+            bordersize = 0, padding = 0, width = mid_w, height = H,
+            background = Blitbuffer.COLOR_WHITE,
+            CenterContainer:new{ dimen = Geom:new{ w = mid_w, h = H }, mid_lbl },
+        }
+
+        row = HorizontalGroup:new{
+            cell(ff_w,  "«",  ff_face,  nav.on_first),
+            cell(jmp_w, "‹N", jmp_face, jmp_cb),
+            cell(nav_w, "‹",  arr_face, nav.on_prev),
+            mid,
+            cell(nav_w, "›",  arr_face, nav.on_next),
+            cell(jmp_w, "N›", jmp_face, jmp_cb),
+            cell(ff_w,  "»",  ff_face,  nav.on_last),
+        }
+    else
+        -- Simple layout (unknown total, e.g., source browse): ‹  p.N  ›
+        local btn_w = Screen:scaleBySize(72)
+        local mid_w = W - 2 * btn_w
+        local arr_face = Font:getFace("cfont", 24)
+        local lbl_face = Font:getFace("cfont", 15)
+
+        local page_str = "p." .. tostring(nav.page)
+        local mid_lbl  = TextWidget:new{ text = page_str, face = lbl_face, fgcolor = Blitbuffer.COLOR_GRAY }
+        local mid = FrameContainer:new{
+            bordersize = 0, padding = 0, width = mid_w, height = H,
+            background = Blitbuffer.COLOR_WHITE,
+            CenterContainer:new{ dimen = Geom:new{ w = mid_w, h = H }, mid_lbl },
+        }
+
+        row = HorizontalGroup:new{
+            cell(btn_w, "‹", arr_face, nav.on_prev),
+            mid,
+            cell(btn_w, "›", arr_face, nav.on_next),
+        }
+    end
 
     return VerticalGroup:new{
         align = "left",
@@ -373,7 +434,7 @@ function P.makeNavBar(nav)
             background = Blitbuffer.COLOR_LIGHT_GRAY,
             dimen = Geom:new{ w = W, h = P.HAIRLINE },
         },
-        HorizontalGroup:new{ arrow("‹", nav.on_prev), mid, arrow("›", nav.on_next) },
+        row,
     }
 end
 
@@ -455,10 +516,11 @@ function P.showTabPanel(active_id, rows, title, close_fn, nav)
 end
 
 -- Build and show a sub-screen (export options, source settings).
+-- No X button — sub-screens use ← back only; X lives on main tab screens.
 function P.showSubPanel(title, rows, on_back, close_fn)
     local body = VerticalGroup:new{
         align = "left",
-        P.makeTitleBar(title, on_back, close_fn),
+        P.makeTitleBar(title, on_back, nil),
         P.hairline(),
         P.contentFrame(rows, P.SUB_H),
     }
@@ -468,13 +530,14 @@ function P.showSubPanel(title, rows, on_back, close_fn)
 end
 
 -- Build and show a screen with a custom 2-tab bar (e.g. Details / Chapters).
--- nav (optional) = { page, max_pages, on_prev, on_next } — shows nav bar above tab bar.
+-- No X button — uses ← back only; X lives on main tab screens.
+-- nav (optional) = { page, max_pages, on_prev, on_next, on_first, on_last, on_jump }
 -- partial (optional) = true to use partial e-ink refresh instead of full.
 function P.showCustomTabPanel(tabs, active_id, switch_fn, rows, title, on_back, close_fn, nav, partial)
     local content_h = nav and P.CONTENT_H_NAV or P.CONTENT_H
     local body = VerticalGroup:new{
         align = "left",
-        P.makeTitleBar(title, on_back, close_fn),
+        P.makeTitleBar(title, on_back, nil),
         P.hairline(),
         P.contentFrame(rows, content_h),
         nav and P.makeNavBar(nav) or P.spacer(0),
