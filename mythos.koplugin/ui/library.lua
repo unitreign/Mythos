@@ -3,7 +3,6 @@ local UIManager  = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox  = require("ui/widget/confirmbox")
 local DB          = require("core.db")
-local Settings    = require("settings")
 local P           = require("ui.panel")
 
 local Library = {}
@@ -22,16 +21,35 @@ end
 local function do_refresh()
     local NetworkMgr = require("ui/network/manager")
     NetworkMgr:runWhenConnected(function()
-        UIManager:show(InfoMessage:new{ text = "Checking for updates...", timeout = 2 })
-        local ok, err = pcall(DB.refresh_new_chapters)
-        if not ok then
+        local ExtMgr  = require("core.extmgr")
+        local loading = InfoMessage:new{ text = "Checking for updates…" }
+        UIManager:show(loading)
+        UIManager:scheduleIn(0.1, function()
+            local novels  = DB.getAll()
+            local updated = 0
+            for _, novel in ipairs(novels) do
+                local ext = ExtMgr.get(novel.source_id)
+                if ext then
+                    local ok, info = pcall(ext.parseNovel, ext, novel.path)
+                    if ok and info then
+                        local new_total = info.chapters and #info.chapters or 0
+                        if new_total ~= (novel.total_chapters or 0) then
+                            DB.update(novel.source_id, novel.path, { total_chapters = new_total })
+                            updated = updated + 1
+                        end
+                    end
+                end
+            end
+            UIManager:close(loading)
             UIManager:show(InfoMessage:new{
-                text    = "Refresh failed: " .. tostring(err),
+                text    = updated > 0
+                    and (updated .. " novel(s) have new chapters!")
+                    or  "No new chapters found.",
                 timeout = 3,
             })
-        end
-        _page = 1
-        rebuild()
+            _page = 1
+            rebuild()
+        end)
     end)
 end
 
@@ -84,16 +102,8 @@ function Library.build_widget()
         end
     end
 
-    -- Footer rows
-    local flat = Settings:get("export_location_flat")
-    local loc  = flat and "Home/Series/Book.epub" or "Home/Mythos/Series/Book.epub"
-    local footer_rows = {
-        P.hairline(),
-        P.makeRow("Export Location", { mandatory = loc, dim = true, callback = function() end }),
-    }
-
-    -- Paginate novel rows; use nav bar for prev/next when multiple pages exist
-    local fixed_h       = 2 * P.ROW_H + 2 * P.HAIRLINE  -- header_rows + footer_rows heights
+    -- Paginate novel rows; nav bar handles prev/next when there are multiple pages
+    local fixed_h       = P.ROW_H + P.HAIRLINE  -- header_rows: Refresh row + hairline
     local total         = #novel_rows
     local per_page_full = math.max(1, math.floor((P.CONTENT_H     - fixed_h) / P.ROW_H))
     local use_nav       = math.ceil(total / per_page_full) > 1
@@ -112,7 +122,6 @@ function Library.build_widget()
     local all_rows = {}
     for _, r in ipairs(header_rows)     do table.insert(all_rows, r) end
     for _, r in ipairs(page_novel_rows) do table.insert(all_rows, r) end
-    for _, r in ipairs(footer_rows)     do table.insert(all_rows, r) end
 
     local nav = use_nav and {
         page      = _page,

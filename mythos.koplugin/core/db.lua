@@ -170,14 +170,19 @@ function DB.recordExport(source_id, novel_path, chapter_paths, epub_path)
     save_exports()
 end
 
--- Returns a set table {chapter_path = true} of all ever-exported chapters for a novel.
+-- Returns a set table {chapter_path = true} of exported chapters whose epub still exists.
 function DB.getExportedChapterSet(source_id, novel_path)
     local data = load_exports()
-    local set = {}
+    local set  = {}
     for _, rec in ipairs(data.records) do
         if rec.source_id == source_id and rec.novel_path == novel_path then
-            for _, cp in ipairs(rec.chapter_paths or {}) do
-                set[cp] = true
+            -- Only include chapters from records where the epub file is still on disk
+            local exists = rec.epub_path
+                and lfs.attributes(rec.epub_path, "mode") == "file"
+            if exists then
+                for _, cp in ipairs(rec.chapter_paths or {}) do
+                    set[cp] = true
+                end
             end
         end
     end

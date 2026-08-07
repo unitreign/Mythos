@@ -187,19 +187,159 @@ function P.makeImageRow(bb)
     }
 end
 
--- ── Title bar ─────────────────────────────────────────────────────────────────
--- on_back: left arrow callback (nil = no arrow); on_close: ✕ callback
+-- ── About popup ───────────────────────────────────────────────────────────────
 
-function P.makeTitleBar(title, on_back, on_close)
+local AboutWidget = InputContainer:extend{}
+
+function AboutWidget:init()
+    local W, H    = P.W, P.H
+    local PADDING = Screen:scaleBySize(28)
+    local version = _G.MYTHOS_VERSION or "0.1.0"
+
+    local content = VerticalGroup:new{
+        align = "left",
+        TextWidget:new{ text = "Mythos",     face = Font:getFace("cfont", 22), bold = true },
+        VerticalSpan:new{ width = Screen:scaleBySize(6) },
+        TextWidget:new{ text = "v" .. version, face = Font:getFace("cfont", 16),
+                        fgcolor = Blitbuffer.COLOR_GRAY },
+        VerticalSpan:new{ width = Screen:scaleBySize(18) },
+        TextWidget:new{ text = "tap anywhere to close", face = Font:getFace("cfont", 12),
+                        fgcolor = Blitbuffer.COLOR_LIGHT_GRAY },
+    }
+    local box = FrameContainer:new{
+        bordersize = Screen:scaleBySize(1),
+        radius     = Screen:scaleBySize(14),
+        background = Blitbuffer.COLOR_WHITE,
+        padding    = PADDING,
+        content,
+    }
+    -- Float box centered over the screen; no background fill so underlying screen shows through
+    self[1] = CenterContainer:new{
+        dimen = Geom:new{ x = 0, y = 0, w = W, h = H },
+        box,
+    }
+    self.dimen = Geom:new{ x = 0, y = 0, w = W, h = H }
+    if Device:hasKeys() then
+        self.key_events = { Close = { { Device.input.group.Back } } }
+    end
+    self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = self.dimen } } }
+end
+function AboutWidget:onTap()    UIManager:close(self); return true end
+function AboutWidget:onClose()  UIManager:close(self); return true end
+function AboutWidget:onShow()         UIManager:setDirty(self, "partial") end
+function AboutWidget:onCloseWidget()  UIManager:setDirty(nil,  "partial") end
+
+-- ── Hamburger menu ────────────────────────────────────────────────────────────
+
+function P.showHamburgerMenu(close_fn)
+    local InfoMessage2 = require("ui/widget/infomessage")
+    local W, H   = P.W, P.H
+    local MENU_W = Screen:scaleBySize(220)
+    local ITEM_H = Screen:scaleBySize(48)
+    local BORDER = Screen:scaleBySize(1)
+    local face   = Font:getFace("cfont", 16)
+
+    -- Position dropdown flush right, just below the title bar
+    local menu_x    = W - MENU_W
+    local menu_y    = P.TITLE_H
+    local n         = 3
+    local inner_w   = MENU_W - 2 * BORDER
+    local total_h   = n * ITEM_H + (n - 1) * BORDER + 2 * BORDER
+    local menu_rect = Geom:new{ x = menu_x, y = menu_y, w = MENU_W, h = total_h }
+
+    local dropdown  -- forward declaration
+
+    local function close_menu() UIManager:close(dropdown) end
+
+    local items = {
+        { "About", function()
+            close_menu()
+            UIManager:show(AboutWidget:new{})
+        end },
+        { "Check for Updates", function()
+            close_menu()
+            UIManager:show(InfoMessage2:new{ text = "Coming soon!", timeout = 2 })
+        end },
+        { "Quit Mythos", function()
+            close_menu()
+            close_fn()
+        end },
+    }
+
+    -- Build tappable item rows
+    local item_widgets = {}
+    for i, item in ipairs(items) do
+        local it    = item
+        local lbl   = TextWidget:new{ text = it[1], face = face }
+        local lbl_h = lbl:getSize().h
+        local pad_v = math.max(0, math.floor((ITEM_H - lbl_h) / 2))
+        local frame = FrameContainer:new{
+            bordersize     = 0,
+            padding_left   = Screen:scaleBySize(16),
+            padding_right  = Screen:scaleBySize(16),
+            padding_top    = pad_v,
+            padding_bottom = math.max(0, ITEM_H - lbl_h - pad_v),
+            width          = inner_w,
+            background     = Blitbuffer.COLOR_WHITE,
+            lbl,
+        }
+        table.insert(item_widgets, P.wrapTappable(frame, it[2]))
+        if i < n then
+            table.insert(item_widgets, LineWidget:new{
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                dimen      = Geom:new{ w = inner_w, h = BORDER },
+            })
+        end
+    end
+
+    local vg_items = { align = "left" }
+    for _, w in ipairs(item_widgets) do table.insert(vg_items, w) end
+    local menu_box = FrameContainer:new{
+        bordersize = BORDER,
+        background = Blitbuffer.COLOR_WHITE,
+        padding    = 0,
+        VerticalGroup:new(vg_items),
+    }
+
+    -- Dropdown widget: painted at menu position, full-screen tap captures outside-close
+    local DropdownMenu = InputContainer:extend{}
+    function DropdownMenu:init()
+        self.dimen = menu_rect
+        self[1]    = menu_box
+        self.ges_events = {
+            Tap = { GestureRange:new{ ges = "tap",
+                    range = Geom:new{ x = 0, y = 0, w = W, h = H } } },
+        }
+    end
+    function DropdownMenu:onTap(_, ges)
+        if ges.pos and not ges.pos:intersectWith(menu_rect) then
+            UIManager:close(self)
+            return true
+        end
+        -- Inside tap: return nil so child item wrappers handle via tree propagation
+    end
+    function DropdownMenu:onShow()        UIManager:setDirty(self, "ui") end
+    function DropdownMenu:onCloseWidget() UIManager:setDirty(nil,  "partial") end
+
+    dropdown = DropdownMenu:new{}
+    UIManager:show(dropdown)
+end
+
+-- ── Title bar ─────────────────────────────────────────────────────────────────
+-- on_back:  ← callback (nil = no back button)
+-- on_close: ✕ callback (nil = no close button)
+-- on_menu:  ≡ callback (nil = no menu button); overrides on_close if both set
+
+function P.makeTitleBar(title, on_back, on_close, on_menu)
     local H     = P.TITLE_H
     local W     = P.W
     local face  = Font:getFace("cfont", 18)
     local bface = Font:getFace("cfont", 22)
 
+    local right_cb    = on_menu or on_close
+    local right_glyph = on_menu and "≡" or "✕"
     local BTN_W = Screen:scaleBySize(48)
-    local left_w  = on_back  and BTN_W or 0
-    local right_w = on_close and BTN_W or 0
-    local mid_w   = W - left_w - right_w
+    local mid_w = W - 2 * BTN_W  -- always symmetric so title is truly centered
 
     local function btnFrame(text_str, cb)
         local btn = TextWidget:new{ text = text_str, face = bface }
@@ -211,6 +351,14 @@ function P.makeTitleBar(title, on_back, on_close)
         return P.wrapTappable(f, cb)
     end
 
+    local function spacer()
+        -- LineWidget has a getSize() that returns dimen directly (no child required)
+        return LineWidget:new{
+            dimen      = Geom:new{ w = BTN_W, h = H },
+            background = Blitbuffer.COLOR_WHITE,
+        }
+    end
+
     local title_widget = TextWidget:new{ text = title or "", face = face, bold = true }
     local title_frame  = FrameContainer:new{
         bordersize = 0, padding = 0,
@@ -218,12 +366,11 @@ function P.makeTitleBar(title, on_back, on_close)
         CenterContainer:new{ dimen = Geom:new{ w = mid_w, h = H }, title_widget },
     }
 
-    local children = {}
-    if on_back  then table.insert(children, btnFrame("←", on_back))  end
-    table.insert(children, title_frame)
-    if on_close then table.insert(children, btnFrame("✕", on_close)) end
-
-    return HorizontalGroup:new(children)
+    return HorizontalGroup:new{
+        on_back  and btnFrame("←",           on_back)  or spacer(),
+        title_frame,
+        right_cb and btnFrame(right_glyph,   right_cb) or spacer(),
+    }
 end
 
 -- ── Tab bar (main navigation: Library / Browse / Sources) ────────────────────
@@ -357,23 +504,21 @@ function P.makeNavBar(nav)
     local row
 
     if nav.max_pages then
-        -- Extended layout (known page count): «  ‹N  ‹   N/M   ›  N›  »
-        local ff_w   = Screen:scaleBySize(36)   -- « and »
-        local jmp_w  = Screen:scaleBySize(46)   -- ‹N and N›
-        local nav_w  = Screen:scaleBySize(44)   -- ‹ and ›
-        local mid_w  = W - 2 * (ff_w + jmp_w + nav_w)
+        -- Extended layout (known page count): «  ‹  [N/M tappable]  ›  »
+        local ff_w  = Screen:scaleBySize(44)   -- « and »
+        local nav_w = Screen:scaleBySize(52)   -- ‹ and ›
+        local mid_w = W - 2 * (ff_w + nav_w)
 
-        local ff_face  = Font:getFace("cfont", 17)
-        local jmp_face = Font:getFace("cfont", 15)
-        local arr_face = Font:getFace("cfont", 22)
+        local ff_face  = Font:getFace("cfont", 18)
+        local arr_face = Font:getFace("cfont", 24)
         local lbl_face = Font:getFace("cfont", 15)
 
-        -- Jump-to-page dialog (shared by ‹N and N›)
+        -- Jump-to-page dialog (opened by tapping the center label)
         local function open_jump()
             local InputDialog = require("ui/widget/inputdialog")
             local dlg
             dlg = InputDialog:new{
-                title   = "Go to page (1 – " .. tostring(nav.max_pages) .. ")",
+                title      = "Go to page (1 – " .. tostring(nav.max_pages) .. ")",
                 input_type = "number",
                 buttons = {{
                     { text = "Go", is_enter_default = true, callback = function()
@@ -387,24 +532,21 @@ function P.makeNavBar(nav)
             UIManager:show(dlg)
         end
 
-        local jmp_cb = nav.on_jump and open_jump or nil
-
-        local page_str = tostring(nav.page) .. " / " .. tostring(nav.max_pages)
-        local mid_lbl  = TextWidget:new{ text = page_str, face = lbl_face, fgcolor = Blitbuffer.COLOR_GRAY }
-        local mid = FrameContainer:new{
+        local page_str  = tostring(nav.page) .. " / " .. tostring(nav.max_pages)
+        local mid_lbl   = TextWidget:new{ text = page_str, face = lbl_face, fgcolor = Blitbuffer.COLOR_GRAY }
+        local mid_frame = FrameContainer:new{
             bordersize = 0, padding = 0, width = mid_w, height = H,
             background = Blitbuffer.COLOR_WHITE,
             CenterContainer:new{ dimen = Geom:new{ w = mid_w, h = H }, mid_lbl },
         }
+        local mid = nav.on_jump and P.wrapTappable(mid_frame, open_jump) or mid_frame
 
         row = HorizontalGroup:new{
-            cell(ff_w,  "«",  ff_face,  nav.on_first),
-            cell(jmp_w, "‹N", jmp_face, jmp_cb),
-            cell(nav_w, "‹",  arr_face, nav.on_prev),
+            cell(ff_w,  "«", ff_face,  nav.on_first),
+            cell(nav_w, "‹", arr_face, nav.on_prev),
             mid,
-            cell(nav_w, "›",  arr_face, nav.on_next),
-            cell(jmp_w, "N›", jmp_face, jmp_cb),
-            cell(ff_w,  "»",  ff_face,  nav.on_last),
+            cell(nav_w, "›", arr_face, nav.on_next),
+            cell(ff_w,  "»", ff_face,  nav.on_last),
         }
     else
         -- Simple layout (unknown total, e.g., source browse): ‹  p.N  ›
@@ -499,12 +641,14 @@ end
 -- ── Panel builders ────────────────────────────────────────────────────────────
 
 -- Build and show a main tab screen (Library / Browse / Sources).
+-- ≡ hamburger menu (About / Check for Updates / Quit) replaces the plain ✕.
 -- nav (optional) = { page, max_pages, on_prev, on_next } — shows nav bar above tab bar.
 function P.showTabPanel(active_id, rows, title, close_fn, nav)
-    local content_h = nav and P.CONTENT_H_NAV or P.CONTENT_H
+    local content_h  = nav and P.CONTENT_H_NAV or P.CONTENT_H
+    local menu_fn    = function() P.showHamburgerMenu(close_fn) end
     local body = VerticalGroup:new{
         align = "left",
-        P.makeTitleBar(title, nil, close_fn),
+        P.makeTitleBar(title, nil, nil, menu_fn),
         P.hairline(),
         P.contentFrame(rows, content_h),
         nav and P.makeNavBar(nav) or P.spacer(0),

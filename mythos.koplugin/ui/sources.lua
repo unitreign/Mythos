@@ -190,9 +190,6 @@ function Sources.build_widget()
     end
     table.insert(rows, P.hairline())
 
-    -- About
-    table.insert(rows, P.makeRow("Mythos", { mandatory = "v0.1.0", dim = true, callback = function() end }))
-
     -- Paginate with nav bar
     local total         = #rows
     local per_page_full = math.max(1, P.MAX_ROWS)

@@ -1,4 +1,6 @@
 -- Mythos — main plugin entry point.
+_G.MYTHOS_VERSION = "0.1.0"
+
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager       = require("ui/uimanager")
 

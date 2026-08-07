@@ -103,7 +103,7 @@ local function build_details_rows(info)
                         total_chapters = #_all_chapters,
                     })
                 end
-                Detail.rebuild(info)
+                Detail.rebuild(info, true)
             end,
         }
     ))
