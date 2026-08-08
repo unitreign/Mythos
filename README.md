@@ -119,7 +119,7 @@ Want to add support for a new site? See the docs at [documentations](github.com/
 
 ## Disclaimer
 
-Mythos is a reading companion tool, not a piracy tool. It only accesses freely available content that sites publicly serve to any visitor. It does not bypass paywalls, unlock premium or coin-gated chapters, scrape paid content, or circumvent any access controls. Locked chapters are clearly marked and cannot be exported. Please respect the terms of service of the sites you access and support authors whose work you enjoy.
+Mythos is an open-source tool for finding and exporting web novels as EPUB files directly on your e-reader. It only accesses content that sites freely serve to any visitor — no paywalls bypassed, no premium chapters unlocked, no paid content scraped. Locked chapters are marked and cannot be exported. Please respect the terms of service of the sites you use and support the authors you enjoy.
 
 ## License
 
