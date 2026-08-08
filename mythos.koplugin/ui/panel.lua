@@ -209,7 +209,7 @@ function AboutWidget:init()
         local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
         if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
         if ok_lfs and lfs.attributes(_LOGO_PATH, "mode") == "file" then
-            local logo_px    = Screen:scaleBySize(62)
+            local logo_px    = Screen:scaleBySize(96)
             local ImageWidget = require("ui/widget/imagewidget")
             logo_w = CenterContainer:new{
                 dimen = Geom:new{ w = INNER_W, h = logo_px },
@@ -292,7 +292,6 @@ function AboutWidget:onCloseWidget()  UIManager:setDirty(nil,  "partial") end
 -- ── Hamburger menu ────────────────────────────────────────────────────────────
 
 function P.showHamburgerMenu(close_fn)
-    local InfoMessage2 = require("ui/widget/infomessage")
     local W, H   = P.W, P.H
     local MENU_W = Screen:scaleBySize(220)
     local ITEM_H = Screen:scaleBySize(48)
@@ -318,7 +317,7 @@ function P.showHamburgerMenu(close_fn)
         end },
         { "Check for Updates", function()
             close_menu()
-            UIManager:show(InfoMessage2:new{ text = "Coming soon!", timeout = 2 })
+            require("core.updater").checkForUpdates()
         end },
         { "Quit Mythos", function()
             close_menu()
