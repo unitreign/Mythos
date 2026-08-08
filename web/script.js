@@ -202,9 +202,15 @@ function openModal(index) {
 }
 
 function closeModal() {
-  modalBackdrop.hidden = true;
   modalOpen = false;
-  document.body.style.overflow = '';
+  const finish = () => {
+    modalBackdrop.classList.remove('closing');
+    modalBackdrop.hidden = true;
+    document.body.style.overflow = '';
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+  modalBackdrop.classList.add('closing');
+  modalBackdrop.addEventListener('animationend', finish, { once: true });
 }
 
 function modalGoTo(dir) {
@@ -290,8 +296,14 @@ function openExtModal() {
 }
 
 function closeExtModal() {
-  extModalBackdrop.hidden = true;
-  document.body.style.overflow = '';
+  const finish = () => {
+    extModalBackdrop.classList.remove('closing');
+    extModalBackdrop.hidden = true;
+    document.body.style.overflow = '';
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+  extModalBackdrop.classList.add('closing');
+  extModalBackdrop.addEventListener('animationend', finish, { once: true });
 }
 
 async function fetchExtensions() {

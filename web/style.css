@@ -769,7 +769,25 @@ code { font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Monaco, Consolas
 .modal-backdrop[hidden] { display: none; }
 @keyframes modalIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
+}
+@keyframes modalOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes modalCardOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.94); }
+}
+.modal-backdrop.closing {
+  animation: modalOut 0.18s ease forwards;
+  pointer-events: none;
+}
+.modal-backdrop.closing .modal-img {
+  animation: modalCardOut 0.16s ease forwards;
+}
+#extModalBackdrop.closing .ext-modal-card {
+  animation: modalCardOut 0.16s ease forwards;
 }
 .modal-inner {
   display: flex;
