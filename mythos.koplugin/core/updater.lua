@@ -48,43 +48,64 @@ end
 
 -- ── HTTP ──────────────────────────────────────────────────────────────────────
 
-local function http_get(url)
+local function _request(url, sink, extra_headers)
     local https = require("ssl.https")
     local http  = require("socket.http")
     local ltn12 = require("ltn12")
-    local sink  = {}
     local req   = url:match("^https") and https or http
-    local ok, code = req.request{
-        url      = url,
-        sink     = ltn12.sink.table(sink),
-        headers  = {
-            ["User-Agent"] = "KOReader-Mythos-Updater",
-            ["Accept"]     = "application/vnd.github.v3+json",
-        },
-        redirect = true,
+    local headers = { ["User-Agent"] = "KOReader-Mythos-Updater" }
+    if extra_headers then
+        for k, v in pairs(extra_headers) do headers[k] = v end
+    end
+    local ok, code, resp_headers = req.request{
+        url     = url,
+        sink    = sink,
+        headers = headers,
     }
+    return ok, code, resp_headers
+end
+
+local function http_get(url)
+    local ltn12 = require("ltn12")
+    local sink  = {}
+    local ok, code = _request(url, ltn12.sink.table(sink), {
+        ["Accept"] = "application/vnd.github.v3+json",
+    })
     logger.dbg("Mythos/Updater: GET", url, "→", tostring(code))
     if not ok or code ~= 200 then return nil, tostring(code) end
     return table.concat(sink)
 end
 
+-- GitHub release asset URLs redirect (302) to the CDN. We follow one redirect.
 local function http_download(url, dest)
-    local https = require("ssl.https")
-    local http  = require("socket.http")
     local ltn12 = require("ltn12")
+
+    -- First request: may return 302 with a Location header.
+    local headers_only = {}
+    local ok, code, resp_headers = _request(url, ltn12.sink.table(headers_only), nil)
+    logger.dbg("Mythos/Updater: download probe", url, "→", tostring(code))
+
+    local final_url = url
+    if code == 301 or code == 302 or code == 303 or code == 307 or code == 308 then
+        local location = resp_headers and (resp_headers["location"] or resp_headers["Location"])
+        if not location then
+            return nil, "redirect with no Location header"
+        end
+        logger.dbg("Mythos/Updater: following redirect →", location)
+        final_url = location
+    elseif not ok or code ~= 200 then
+        return nil, tostring(code)
+    end
+
+    -- Second (or only) request: stream directly to disk.
     local fh, err = io.open(dest, "wb")
     if not fh then return nil, "cannot open dest: " .. tostring(err) end
-    local req  = url:match("^https") and https or http
-    local ok, code = req.request{
-        url      = url,
-        sink     = ltn12.sink.file(fh),  -- auto-closes fh on completion
-        headers  = { ["User-Agent"] = "KOReader-Mythos-Updater" },
-        redirect = true,
-    }
-    logger.dbg("Mythos/Updater: download", url, "→", tostring(code))
-    if not ok or code ~= 200 then
+    local ok2, code2 = _request(final_url, ltn12.sink.file(fh), nil)
+    -- ltn12.sink.file closes fh automatically
+    logger.dbg("Mythos/Updater: download stream", final_url, "→", tostring(code2))
+    if not ok2 or code2 ~= 200 then
         pcall(os.remove, dest)
-        return nil, tostring(code)
+        return nil, tostring(code2)
     end
     return true
 end
