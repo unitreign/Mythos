@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mythos — Web Novel Library for KOReader</title>
+  <meta name="description" content="Browse, track, and export your favourite web novels as EPUBs — right on your e-reader. A free KOReader plugin for Kobo, Kindle, and more.">
+  <meta property="og:title" content="Mythos — Web Novel Library for KOReader">
+  <meta property="og:description" content="Browse, track, and export your favourite web novels as EPUBs — right on your e-reader.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+
+  <!-- ─── NAV ─── -->
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="/" class="nav-brand">
+        <img src="/images/logo.svg" alt="Mythos" class="nav-logo logo-adaptive">
+        <span class="nav-name">Mythos</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/unitreign/mythos" target="_blank" rel="noopener" class="nav-gh">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle colour scheme" title="Toggle light/dark mode">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="container hero-layout">
+      <div class="hero-text">
+        <img src="/images/logo.svg" alt="Mythos" class="hero-logo logo-adaptive">
+        <h1 class="hero-title">Mythos</h1>
+        <p class="hero-tagline">A web novel library for KOReader.<br>Browse, track, and export your favourite stories as EPUBs — <em>right on your e-reader.</em></p>
+        <div class="hero-actions">
+          <a href="https://github.com/unitreign/mythos/releases/latest" class="btn btn-primary" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Latest
+          </a>
+          <a href="https://github.com/unitreign/mythos" class="btn btn-ghost" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
+        <p class="hero-meta">Free &amp; Open Source · GPL-3.0 · Kobo, Kindle &amp; more</p>
+      </div>
+      <div class="hero-shot" aria-hidden="true">
+        <img src="/images/screenshots/ss-library.png" alt="">
+      </div>
+    </div>
+    <div class="hero-fade" aria-hidden="true"></div>
+  </section>
+
+  <!-- ─── FEATURES ─── -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Everything your e-reader was missing</h2>
+        <p>Mythos brings the web novel experience to e-ink — browse, track, and read without ever touching a computer.</p>
+      </div>
+      <div class="features-grid">
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <h3>Browse &amp; Search</h3>
+          <p>Explore popular novels or search by title directly from your device. No phone required.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Track Novels</h3>
+          <p>Save novels to your library and check for new chapters at a glance with one-tap batch refresh.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Chapter Selection</h3>
+          <p>Pick all chapters, deselect what you don't want, or cherry-pick a custom range with precision.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <h3>Flexible Export</h3>
+          <p>Export as a single EPUB, one per chapter, or bundled into volumes — with cover art embedded automatically.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h3>Extension System</h3>
+          <p>Sources are installable plugins. Add support for new sites without updating Mythos itself.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>Chapter Caching</h3>
+          <p>Re-opening a tracked novel is instant. Only new chapters are fetched, keeping things snappy.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── SCREENSHOTS ─── -->
+  <section class="section section-alt" id="screenshots">
+    <div class="container">
+      <div class="section-header">
+        <h2>See it in action</h2>
+        <p>Mythos runs natively on your e-ink device — no companion app, no cloud sync required.</p>
+      </div>
+      <div class="slideshow" id="slideshow">
+        <div class="slideshow-viewport">
+          <div class="slideshow-track" id="slideshowTrack"></div>
+        </div>
+        <div class="slideshow-controls">
+          <button class="slide-btn" id="slidePrev" aria-label="Previous screenshot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="slide-dots" id="slideDots" role="tablist" aria-label="Screenshot navigation"></div>
+          <button class="slide-btn" id="slideNext" aria-label="Next screenshot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <p class="slide-caption" id="slideCaption" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── INSTALL ─── -->
+  <section class="section" id="install">
+    <div class="container">
+      <div class="section-header">
+        <h2>Installation</h2>
+        <p>Installs like any KOReader plugin — copy, restart, done.</p>
+      </div>
+      <div class="install-layout">
+        <ol class="install-steps reveal">
+          <li>
+            <p>Go to the <a href="https://github.com/unitreign/mythos/releases/latest" target="_blank" rel="noopener">Releases page</a> and download <code>mythos.koplugin.zip</code></p>
+          </li>
+          <li>
+            <p>Extract the zip — you'll get a folder called <code>mythos.koplugin</code></p>
+          </li>
+          <li>
+            <p>Copy that folder into KOReader's <code>plugins/</code> directory on your device</p>
+          </li>
+          <li>
+            <p>Restart KOReader → <strong>Tools</strong> → <strong>Mythos</strong></p>
+          </li>
+        </ol>
+        <div class="install-paths reveal">
+          <p class="card-label">Plugin directory by device</p>
+          <div class="path-row">
+            <span class="device-tag">Kobo</span>
+            <code>/mnt/onboard/.adds/koreader/plugins/</code>
+          </div>
+          <div class="path-row">
+            <span class="device-tag">Kindle</span>
+            <code>extensions/koreader/plugins/</code>
+          </div>
+          <div class="path-row">
+            <span class="device-tag">Other</span>
+            <code>wherever your KOReader plugins/ lives</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── GET STARTED ─── -->
+  <section class="section section-alt" id="get-started">
+    <div class="container">
+      <div class="section-header">
+        <h2>Get started in minutes</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-num" aria-hidden="true">01</div>
+          <div class="step-body">
+            <h3>Add a source</h3>
+            <p>Go to the <strong>Sources</strong> tab, tap <strong>+ Add Repo</strong>, and enter the official extension repo. Tap <strong>Refresh Index</strong>, then tap an extension under <strong>Available</strong> to install it.</p>
+            <code class="inline-code">github.com/unitreign/mythosext</code>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num" aria-hidden="true">02</div>
+          <div class="step-body">
+            <h3>Browse or search</h3>
+            <p>Switch to the <strong>Browse</strong> tab, select your installed source to see popular titles, or tap <strong>Search</strong> at the top to find something specific.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num" aria-hidden="true">03</div>
+          <div class="step-body">
+            <h3>Track a novel</h3>
+            <p>Tap any novel to open its detail page, then tap <strong>Track Novel</strong> to add it to your library. Use <strong>Refresh</strong> on the library screen to check for new chapters across everything you're following.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num" aria-hidden="true">04</div>
+          <div class="step-body">
+            <h3>Export to EPUB</h3>
+            <p>From a novel's detail page, switch to the <strong>Chapters</strong> tab. Select what you want, tap <strong>Export</strong>, choose your format, and Mythos builds the EPUB files on your device.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── EXTENSIONS ─── -->
+  <section class="section" id="extensions">
+    <div class="container">
+      <div class="section-header">
+        <h2>Powered by extensions</h2>
+        <p>Each extension is a small Lua file that teaches Mythos how to talk to one website. Install directly on your device — no Mythos update needed.</p>
+      </div>
+      <div class="ext-layout">
+        <div class="ext-text reveal">
+          <p>The official extension repository is <a href="https://github.com/unitreign/mythosext" target="_blank" rel="noopener"><strong>unitreign/mythosext</strong></a> — the best place to start. Extensions are installed from the Sources tab, straight onto your device.</p>
+          <p>Want to add support for a new site? The full API, required methods, and a worked example are documented in the repo. Finished extensions can be submitted as a pull request to mythosext.</p>
+          <a href="https://github.com/unitreign/mythosext" class="btn btn-outline" target="_blank" rel="noopener">Browse Extensions →</a>
+        </div>
+        <div class="ext-card reveal">
+          <p class="card-label">Official repository</p>
+          <pre class="code-block">github.com/unitreign/mythosext</pre>
+          <div class="ext-steps">
+            <div class="ext-step"><span>1</span><p>Sources tab → <strong>+ Add Repo</strong></p></div>
+            <div class="ext-step"><span>2</span><p>Enter repo URL, tap <strong>Refresh Index</strong></p></div>
+            <div class="ext-step"><span>3</span><p>Tap an extension under <strong>Available</strong></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── DISCLAIMER ─── -->
+  <section class="section section-alt disclaimer-section">
+    <div class="container">
+      <div class="disclaimer reveal">
+        <div class="disclaimer-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg>
+        </div>
+        <div>
+          <h3>Disclaimer</h3>
+          <p>Mythos is an open-source tool for finding and exporting web novels as EPUB files directly on your e-reader. It only accesses content that sites freely serve to any visitor — no paywalls bypassed, no premium chapters unlocked, no paid content scraped. Locked chapters are marked and cannot be exported. Please respect the terms of service of the sites you use and support the authors you enjoy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="/images/logo.svg" alt="Mythos" class="footer-logo logo-adaptive">
+        <span>Mythos</span>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="https://github.com/unitreign/mythos" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/unitreign/mythos/releases/latest" target="_blank" rel="noopener">Releases</a>
+        <a href="https://github.com/unitreign/mythosext" target="_blank" rel="noopener">Extensions</a>
+        <a href="https://ko-fi.com/unitreign" target="_blank" rel="noopener">Ko-fi</a>
+        <a href="https://github.com/unitreign/mythos/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
+      </nav>
+      <p class="footer-copy">© 2026 unitreign · <a href="https://github.com/unitreign/mythos/blob/main/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></p>
+    </div>
+  </footer>
+
+  <!-- ─── LIGHTBOX MODAL ─── -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-label="Screenshot enlarged view" hidden>
+    <button class="modal-close" id="modalClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <button class="modal-nav modal-prev" id="modalPrev" aria-label="Previous screenshot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="modal-inner">
+      <img class="modal-img" id="modalImg" src="" alt="">
+      <p class="modal-caption" id="modalCaption"></p>
+    </div>
+    <button class="modal-nav modal-next" id="modalNext" aria-label="Next screenshot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <script src="/web/script.js"></script>
+</body>
+</html>
