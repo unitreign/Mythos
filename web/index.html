@@ -232,7 +232,8 @@
         <div class="ext-text reveal">
           <p>The official extension repository is <a href="https://github.com/unitreign/mythosext" target="_blank" rel="noopener"><strong>unitreign/mythosext</strong></a> — the best place to start. Extensions are installed from the Sources tab, straight onto your device.</p>
           <p>Want to add support for a new site? The full API, required methods, and a worked example are documented in the repo. Finished extensions can be submitted as a pull request to mythosext.</p>
-          <a href="https://github.com/unitreign/mythosext" class="btn btn-outline" target="_blank" rel="noopener">Browse Extensions →</a>
+          <a href="https://github.com/unitreign/mythosext" class="btn btn-outline" target="_blank" rel="noopener">Browse on GitHub →</a>
+          <button class="link-btn open-ext-modal">View supported sources</button>
         </div>
         <div class="ext-card reveal">
           <p class="card-label">Official repository</p>
@@ -243,6 +244,102 @@
             <div class="ext-step"><span>3</span><p>Tap an extension under <strong>Available</strong></p></div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ─── -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2>FAQ</h2>
+      </div>
+      <div class="faq-list reveal">
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Which devices are supported?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>Any device that runs KOReader — Kobo, Kindle, and others. If KOReader runs on it, Mythos runs on it.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            What sites are supported?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>Supported sites are managed through the extension system. Browse the <a href="https://github.com/unitreign/mythosext" target="_blank" rel="noopener">extension repository</a>, or <button class="link-btn open-ext-modal">view the current list here</button>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Why can't I export some chapters?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>Some chapters are locked behind a paywall on the source site — Mythos marks these and skips them on export. If a chapter that should be free fails to export, <a href="https://github.com/unitreign/mythos/issues" target="_blank" rel="noopener">open an issue</a> and we'll look into it.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            How do I update extensions?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>When an update is available, an update button appears next to the extension in the <strong>Sources</strong> tab. Tap it to update.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Is this free?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>Yes, and it always will be. If Mythos is useful to you, donations are welcome on <a href="https://ko-fi.com/unitreign" target="_blank" rel="noopener">Ko-fi</a>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Can I request or submit an extension?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>You can open a request in the <a href="https://github.com/unitreign/mythosext/issues" target="_blank" rel="noopener">extension repository</a>. If you've built one yourself and want it listed, open a pull request there.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Does Mythos collect any analytics?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-a" role="region">
+            <div class="faq-a-inner">
+              <p>No. Mythos has no analytics or tracking built in. Browsing, fetching novel details, and exporting chapters does make regular HTTP requests to those sites — so they may see traffic from your device, same as any browser visit.</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -279,6 +376,21 @@
       <p class="footer-copy">© 2026 unitreign · <a href="https://github.com/unitreign/mythos/blob/main/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></p>
     </div>
   </footer>
+
+  <!-- ─── EXTENSIONS MODAL ─── -->
+  <div class="modal-backdrop" id="extModalBackdrop" role="dialog" aria-modal="true" aria-label="Supported extensions" hidden>
+    <div class="ext-modal-card">
+      <div class="ext-modal-header">
+        <h3>Supported extensions</h3>
+        <button class="ext-modal-close" id="extModalClose" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ext-modal-body" id="extModalBody">
+        <p class="ext-loading">Loading…</p>
+      </div>
+    </div>
+  </div>
 
   <!-- ─── LIGHTBOX MODAL ─── -->
   <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-label="Screenshot enlarged view" hidden>

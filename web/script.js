@@ -112,6 +112,10 @@ nextBtn.addEventListener('click', () => goTo(current + 1));
 
 /* keyboard navigation */
 document.addEventListener('keydown', e => {
+  if (extModalBackdrop && !extModalBackdrop.hidden) {
+    if (e.key === 'Escape') closeExtModal();
+    return;
+  }
   if (modalOpen) {
     if (e.key === 'Escape') closeModal();
     if (e.key === 'ArrowLeft') { e.preventDefault(); modalGoTo(-1); }
@@ -254,6 +258,69 @@ if ('IntersectionObserver' in window) {
 document.querySelectorAll('.features-grid').forEach(grid => {
   grid.querySelectorAll('.reveal').forEach((card, i) => {
     card.style.transitionDelay = `${i * 60}ms`;
+  });
+});
+
+/* ─── FAQ ACCORDION ─── */
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => {
+      i.classList.remove('open');
+      i.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+    });
+    if (!isOpen) {
+      item.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  });
+});
+
+/* ─── EXTENSIONS MODAL ─── */
+const extModalBackdrop = document.getElementById('extModalBackdrop');
+const extModalClose    = document.getElementById('extModalClose');
+const extModalBody     = document.getElementById('extModalBody');
+let extLoaded = false;
+
+function openExtModal() {
+  extModalBackdrop.hidden = false;
+  document.body.style.overflow = 'hidden';
+  if (!extLoaded) fetchExtensions();
+}
+
+function closeExtModal() {
+  extModalBackdrop.hidden = true;
+  document.body.style.overflow = '';
+}
+
+async function fetchExtensions() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/unitreign/mythosext/main/index.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    extLoaded = true;
+    const rows = data.map(ext =>
+      `<div class="ext-row">
+        <span class="ext-row-name">${ext.name}</span>
+        <span class="ext-lang-tag">${ext.lang.toUpperCase()}</span>
+      </div>`
+    ).join('');
+    extModalBody.innerHTML = rows || '<p class="ext-loading">No extensions found.</p>';
+  } catch {
+    extModalBody.innerHTML = '<p class="ext-fetch-err">Could not load extensions. See the <a href="https://github.com/unitreign/mythosext" target="_blank" rel="noopener">extension repository</a>.</p>';
+  }
+}
+
+extModalClose.addEventListener('click', closeExtModal);
+extModalBackdrop.addEventListener('click', e => {
+  if (e.target === extModalBackdrop) closeExtModal();
+});
+
+document.querySelectorAll('.open-ext-modal').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    openExtModal();
   });
 });
 
