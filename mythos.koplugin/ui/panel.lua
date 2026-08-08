@@ -292,6 +292,7 @@ function AboutWidget:onCloseWidget()  UIManager:setDirty(nil,  "partial") end
 -- ── Hamburger menu ────────────────────────────────────────────────────────────
 
 function P.showHamburgerMenu(close_fn)
+    local InfoMessage = require("ui/widget/infomessage")
     local W, H   = P.W, P.H
     local MENU_W = Screen:scaleBySize(220)
     local ITEM_H = Screen:scaleBySize(48)
@@ -315,10 +316,16 @@ function P.showHamburgerMenu(close_fn)
             close_menu()
             UIManager:show(AboutWidget:new{})
         end },
-        { "Check for Updates", function()
-            close_menu()
-            require("core.updater").checkForUpdates()
-        end },
+        { "Check for Updates",
+            function()
+                close_menu()
+                UIManager:show(InfoMessage:new{ text = "This feature is disabled for now.", timeout = 3 })
+            end,
+            function()
+                close_menu()
+                require("core.updater").checkForUpdates()
+            end,
+        },
         { "Quit Mythos", function()
             close_menu()
             close_fn()
@@ -375,9 +382,10 @@ function P.showHamburgerMenu(close_fn)
     function DropdownMenu:init()
         self.dimen = Geom:new{ x = 0, y = 0, w = W, h = H }
         self[1]    = menu_box
+        local full = Geom:new{ x = 0, y = 0, w = W, h = H }
         self.ges_events = {
-            Tap = { GestureRange:new{ ges = "tap",
-                    range = Geom:new{ x = 0, y = 0, w = W, h = H } } },
+            Tap  = { GestureRange:new{ ges = "tap",  range = full } },
+            Hold = { GestureRange:new{ ges = "hold", range = full } },
         }
     end
     function DropdownMenu:paintTo(bb, x, y)
@@ -388,15 +396,26 @@ function P.showHamburgerMenu(close_fn)
     function DropdownMenu:onTap(_, ges)
         if not ges.pos then return true end
         if not ges.pos:intersectWith(menu_rect) then
-            -- Tap outside the menu box: close and swallow the event.
             UIManager:close(self)
             return true
         end
-        -- Tap inside the menu box: fire the matching item or do nothing.
-        -- Always return true so the event never falls through to widgets below.
         for i, rect in ipairs(item_rects) do
             if ges.pos:intersectWith(rect) then
                 items[i][2]()
+                return true
+            end
+        end
+        return true
+    end
+    function DropdownMenu:onHold(_, ges)
+        if not ges.pos then return true end
+        if not ges.pos:intersectWith(menu_rect) then
+            UIManager:close(self)
+            return true
+        end
+        for i, rect in ipairs(item_rects) do
+            if ges.pos:intersectWith(rect) and items[i][3] then
+                items[i][3]()
                 return true
             end
         end
