@@ -92,7 +92,7 @@ function P.spacer(h)
 end
 
 -- ── Row widget ────────────────────────────────────────────────────────────────
--- opts: { bold, dim, mandatory, callback, hold_callback }
+-- opts: { bold, dim, mandatory, mandatory_bold, callback, hold_callback }
 
 function P.makeRow(text, opts)
     opts = opts or {}
@@ -112,7 +112,8 @@ function P.makeRow(text, opts)
         local hint = TextWidget:new{
             text    = tostring(opts.mandatory),
             face    = small_face,
-            fgcolor = Blitbuffer.COLOR_GRAY,
+            bold    = opts.mandatory_bold or false,
+            fgcolor = opts.mandatory_bold and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_GRAY,
         }
         inner = HorizontalGroup:new{
             label,
@@ -325,11 +326,20 @@ function P.showHamburgerMenu(close_fn)
         end },
     }
 
-    -- Build tappable item rows
+    -- Pre-compute each item's screen rect for hit-testing in onTap.
+    -- Layout inside menu_box (FrameContainer bordersize=BORDER):
+    --   top BORDER, then item/separator pairs, then bottom BORDER.
+    local item_rects = {}
+    local iy = menu_y + BORDER
+    for i = 1, n do
+        item_rects[i] = Geom:new{ x = menu_x + BORDER, y = iy, w = inner_w, h = ITEM_H }
+        iy = iy + ITEM_H + BORDER
+    end
+
+    -- Build plain (non-tappable) item rows — taps are handled entirely in onTap.
     local item_widgets = {}
     for i, item in ipairs(items) do
-        local it    = item
-        local lbl   = TextWidget:new{ text = it[1], face = face }
+        local lbl   = TextWidget:new{ text = item[1], face = face }
         local lbl_h = lbl:getSize().h
         local pad_v = math.max(0, math.floor((ITEM_H - lbl_h) / 2))
         local frame = FrameContainer:new{
@@ -342,7 +352,7 @@ function P.showHamburgerMenu(close_fn)
             background     = Blitbuffer.COLOR_WHITE,
             lbl,
         }
-        table.insert(item_widgets, P.wrapTappable(frame, it[2]))
+        table.insert(item_widgets, frame)
         if i < n then
             table.insert(item_widgets, LineWidget:new{
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
@@ -360,9 +370,8 @@ function P.showHamburgerMenu(close_fn)
         VerticalGroup:new(vg_items),
     }
 
-    -- Dropdown widget: full-screen for input capture, but box is painted at (menu_x, menu_y).
-    -- InputContainer:paintTo always resets self.dimen.x/y to the x,y UIManager passes (0,0),
-    -- so we must override paintTo to force the child to its correct screen position.
+    -- Dropdown widget: full-screen for input capture, box painted at (menu_x, menu_y).
+    -- All tap handling is done here — never propagated to lower widgets.
     local DropdownMenu = InputContainer:extend{}
     function DropdownMenu:init()
         self.dimen = Geom:new{ x = 0, y = 0, w = W, h = H }
@@ -378,11 +387,21 @@ function P.showHamburgerMenu(close_fn)
         self[1]:paintTo(bb, menu_x, menu_y)
     end
     function DropdownMenu:onTap(_, ges)
-        if ges.pos and not ges.pos:intersectWith(menu_rect) then
+        if not ges.pos then return true end
+        if not ges.pos:intersectWith(menu_rect) then
+            -- Tap outside the menu box: close and swallow the event.
             UIManager:close(self)
             return true
         end
-        -- Inside tap: return nil so child item wrappers handle via tree propagation
+        -- Tap inside the menu box: fire the matching item or do nothing.
+        -- Always return true so the event never falls through to widgets below.
+        for i, rect in ipairs(item_rects) do
+            if ges.pos:intersectWith(rect) then
+                items[i][2]()
+                return true
+            end
+        end
+        return true
     end
     function DropdownMenu:onShow()        UIManager:setDirty(self, "ui") end
     function DropdownMenu:onCloseWidget() UIManager:setDirty(nil,  "partial") end

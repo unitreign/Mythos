@@ -156,8 +156,9 @@ function Sources.build_widget()
             local has_upd = ExtMgr.hasUpdate(m.id)
             table.insert(rows, P.makeRow(
                 m.name .. "  v" .. (m.version or "?") .. "  ·  " .. (m.lang or "en"), {
-                    mandatory     = has_upd and "update!" or "installed",
-                    bold          = has_upd,
+                    mandatory      = has_upd and "update!" or "installed",
+                    mandatory_bold = has_upd,
+                    bold           = has_upd,
                     callback      = function() Sources.ext_settings(m) end,
                     hold_callback = function()
                         UIManager:show(ConfirmBox:new{
@@ -185,8 +186,9 @@ function Sources.build_widget()
             local inst    = ExtMgr.isInstalled(m.id)
             local has_upd = inst and ExtMgr.hasUpdate(m.id)
             table.insert(rows, P.makeRow(m.name .. "  ·  " .. (m.lang or "en"), {
-                mandatory = inst and (has_upd and "update!" or "installed") or "tap to install",
-                dim       = inst and not has_upd,
+                mandatory      = inst and (has_upd and "update!" or "installed") or "tap to install",
+                mandatory_bold = has_upd or false,
+                dim            = inst and not has_upd,
                 callback  = function()
                     if not inst or has_upd then
                         NetworkMgr:runWhenConnected(function()
