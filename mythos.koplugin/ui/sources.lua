@@ -89,10 +89,24 @@ function Sources.build_widget()
     table.insert(rows, P.makeRow("-- Repositories --", { dim = true, callback = function() end }))
     local repos = ExtMgr.getRepos()
     if #repos == 0 then
-        table.insert(rows, P.makeRow("(no custom repos added)", { dim = true, callback = function() end }))
+        table.insert(rows, P.makeRow("(no repos added)", { dim = true, callback = function() end }))
     else
         for _, url in ipairs(repos) do
-            table.insert(rows, P.makeRow(url, { dim = true, callback = function() end }))
+            local u = url
+            table.insert(rows, P.makeRow(u, {
+                mandatory     = "hold to remove",
+                dim           = true,
+                callback      = function() end,
+                hold_callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text        = "Remove this repo?\n" .. u,
+                        ok_callback = function()
+                            ExtMgr.removeRepo(u)
+                            rebuild()
+                        end,
+                    })
+                end,
+            }))
         end
     end
     table.insert(rows, P.makeRow("+ Add Repo", {

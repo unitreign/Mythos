@@ -208,6 +208,15 @@ function ExtMgr.addRepo(url)
     return true
 end
 
+function ExtMgr.removeRepo(url)
+    local repos = Settings:get("repos") or {}
+    local new_repos = {}
+    for _, u in ipairs(repos) do
+        if u ~= url then table.insert(new_repos, u) end
+    end
+    Settings:set("repos", new_repos)
+end
+
 function ExtMgr.getRepos()
     return Settings:get("repos") or {}
 end

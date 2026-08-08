@@ -54,7 +54,7 @@ function HttpClient.download(url, dest_path, timeout)
         sink    = ltn12.sink.file(f),
         timeout = timeout or 60,
     }
-    f:close()
+    -- ltn12.sink.file closes f automatically; calling f:close() again crashes
     local success = ok and (code == 200)
     if not success then os.remove(dest_path) end
     return success, code
