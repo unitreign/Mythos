@@ -100,6 +100,7 @@ local function build_details_rows(info)
                         cover          = info.cover,
                         author         = info.author,
                         status         = info.status,
+                        summary        = info.summary,
                         total_chapters = #_all_chapters,
                     })
                 end
@@ -107,6 +108,13 @@ local function build_details_rows(info)
             end,
         }
     ))
+
+    table.insert(rows, P.makeRow("Refresh Chapter List", {
+        dim      = true,
+        callback = function()
+            Detail.fetchForceRefresh(_source_id, info.path or "")
+        end,
+    }))
 
     return rows
 end
@@ -171,23 +179,27 @@ local function build_chapters_rows(info)
         local ch_start = (_page - 1) * per_page + 1
         local ch_end   = math.min(ch_start + per_page - 1, total_ch)
         for i = ch_start, ch_end do
-            local ch     = _all_chapters[i]
-            local p      = ch_path(ch, i)
-            local label  = ch.name or ch.title or ("Chapter " .. i)
-            local inf    = info
-            local is_exp = exported_set[p] and true or false
-            local is_sel = _selected[p] and true or false
-            table.insert(rows, P.makeRow(
-                (is_exp and "✓" or " ") .. (is_sel and "[x] " or "[ ] ") .. label, {
-                    mandatory = ch.chapter_number and ("Ch." .. ch.chapter_number) or nil,
-                    bold      = is_sel,
-                    callback  = function()
-                        if _selected[p] then _selected[p] = nil
-                        else _selected[p] = true end
-                        Detail.rebuild(inf, true)
-                    end,
-                }
-            ))
+            local ch        = _all_chapters[i]
+            local p         = ch_path(ch, i)
+            local label     = ch.name or ch.title or ("Chapter " .. i)
+            local inf       = info
+            local is_exp    = exported_set[p] and true or false
+            local is_sel    = _selected[p] and true or false
+            local is_locked = ch.locked == true
+            local prefix    = is_exp and "✓" or " "
+            local display   = is_locked
+                and (prefix .. " (locked) " .. label)
+                or  (prefix .. (is_sel and " [x] " or " [ ] ") .. label)
+            table.insert(rows, P.makeRow(display, {
+                mandatory = ch.chapter_number and ("Ch." .. ch.chapter_number) or nil,
+                bold      = is_sel and not is_locked,
+                dim       = is_locked,
+                callback  = is_locked and function() end or function()
+                    if _selected[p] then _selected[p] = nil
+                    else _selected[p] = true end
+                    Detail.rebuild(inf, true)
+                end,
+            }))
         end
     end
 
@@ -253,6 +265,12 @@ end
 
 -- ── Public ────────────────────────────────────────────────────────────────────
 
+-- Clear chapter cache then re-fetch from scratch.
+function Detail.fetchForceRefresh(source_id, path)
+    DB.clearChapterCache(source_id, path)
+    Detail.fetch(source_id, path)
+end
+
 function Detail.fetch(source_id, path)
     _fetch_id     = _fetch_id + 1
     local my_id   = _fetch_id
@@ -274,33 +292,103 @@ function Detail.fetch(source_id, path)
     end
 
     NetworkMgr:runWhenConnected(function()
-        -- Show indicator; scheduleIn yields to UIManager so it actually paints
         local loading = InfoMessage:new{ text = "Loading novel details…" }
         UIManager:show(loading)
 
         UIManager:scheduleIn(0.1, function()
-            if my_id ~= _fetch_id then return end  -- fetch was superseded
+            if my_id ~= _fetch_id then return end
 
-            local ok, info = pcall(ext.parseNovel, ext, path)
-            UIManager:close(loading)
+            local info
 
-            if not ok or not info then
-                UIManager:show(InfoMessage:new{
-                    text    = "Failed to load novel: " .. tostring(info),
-                    timeout = 4,
-                })
-                return
+            if type(ext.parseNovelMeta) == "function" then
+                -- ── Fast path: metadata-only fetch + smart chapter loading ────
+                -- Only 1 HTTP request when the chapter count hasn't changed.
+                local ok, meta = pcall(ext.parseNovelMeta, ext, path)
+                if not ok or not meta then
+                    UIManager:close(loading)
+                    UIManager:show(InfoMessage:new{
+                        text    = "Failed to load novel: " .. tostring(meta),
+                        timeout = 4,
+                    })
+                    return
+                end
+                info = meta
+
+                local new_total = info.total_chapters or 0
+                local cache     = DB.loadChapterCache(source_id, path)
+
+                if cache and cache.total == new_total and new_total > 0 then
+                    -- Cache hit: chapter count unchanged, use cached list
+                    _all_chapters = cache.chapters
+                elseif cache and cache.total > 0 and new_total > cache.total
+                       and type(ext.parsePage) == "function" and ext.chapters_per_page then
+                    -- Delta: fetch only the new pages
+                    local per_page     = ext.chapters_per_page
+                    local first_new_pg = math.floor(cache.total / per_page) + 1
+                    local last_pg      = math.ceil(new_total / per_page)
+                    local new_chs      = {}
+                    for pg = first_new_pg, last_pg do
+                        local ok_p, pdata = pcall(ext.parsePage, ext, path, tostring(pg))
+                        if ok_p and pdata and pdata.chapters then
+                            for _, ch in ipairs(pdata.chapters) do
+                                table.insert(new_chs, ch)
+                            end
+                        end
+                    end
+                    local seen = {}
+                    _all_chapters = {}
+                    for _, ch in ipairs(cache.chapters) do
+                        seen[ch.path or ""] = true
+                        table.insert(_all_chapters, ch)
+                    end
+                    for _, ch in ipairs(new_chs) do
+                        if not seen[ch.path or ""] then
+                            table.insert(_all_chapters, ch)
+                        end
+                    end
+                    DB.saveChapterCache(source_id, path, _all_chapters, #_all_chapters)
+                else
+                    -- Full fetch (cache miss, count decreased, or no delta support)
+                    local ok_n, full = pcall(ext.parseNovel, ext, path)
+                    if ok_n and full then
+                        _all_chapters = full.chapters or {}
+                        for k, v in pairs(full) do
+                            if info[k] == nil then info[k] = v end
+                        end
+                    end
+                    DB.saveChapterCache(source_id, path, _all_chapters, #_all_chapters)
+                end
+                info.total_chapters = #_all_chapters
+
+            else
+                -- ── Legacy path: parseNovel returns everything ────────────────
+                local ok, full = pcall(ext.parseNovel, ext, path)
+                if not ok or not full then
+                    UIManager:close(loading)
+                    UIManager:show(InfoMessage:new{
+                        text    = "Failed to load novel: " .. tostring(full),
+                        timeout = 4,
+                    })
+                    return
+                end
+                info          = full
+                _all_chapters = full.chapters or {}
+                DB.saveChapterCache(source_id, path, _all_chapters, #_all_chapters)
             end
 
-            _novel_info   = info
-            _all_chapters = info.chapters or {}
+            UIManager:close(loading)
+            _novel_info = info
 
-            -- Fetch and decode cover image at native resolution, then scale to aspect-ratio display size
+            -- ── Cover: disk cache first, download if missing ──────────────────
             if info.cover and info.cover ~= "" then
                 local ok_epub, Epub       = pcall(require, "core.epub")
                 local ok_ri,  RenderImage = pcall(require, "ui/renderimage")
                 if ok_epub and ok_ri then
-                    local cdata = Epub.fetch_cover(info.cover)
+                    local cdata = DB.loadCoverCache(source_id, path)
+                    if not cdata then
+                        cdata = Epub.fetch_cover(info.cover)
+                        if cdata then DB.saveCoverCache(source_id, path, cdata) end
+                    end
                     if cdata then
                         local ok_bb, native = pcall(
                             RenderImage.renderImageData, RenderImage,
@@ -318,6 +406,14 @@ function Detail.fetch(source_id, path)
                             native:free()
                         end
                     end
+                end
+            end
+
+            -- ── Persist summary for tracked novels ────────────────────────────
+            if info.summary and info.summary ~= "" then
+                local tracked = DB.find(source_id, info.path or path)
+                if tracked and not tracked.summary then
+                    DB.update(source_id, info.path or path, { summary = info.summary })
                 end
             end
 

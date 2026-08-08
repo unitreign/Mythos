@@ -20,6 +20,10 @@ local VerticalSpan    = require("ui/widget/verticalspan")
 
 local Screen = Device.screen
 
+-- Absolute path to the plugin root (computed once at load time from this file's path)
+local _PLUGIN_ROOT = (debug.getinfo(1, "S").source or ""):match("^@(.+)/ui/panel%.lua$") or ""
+local _LOGO_PATH   = _PLUGIN_ROOT .. "/resources/logo.png"
+
 local P = {}
 
 -- ── Dimensions ────────────────────────────────────────────────────────────────
@@ -193,27 +197,82 @@ local AboutWidget = InputContainer:extend{}
 
 function AboutWidget:init()
     local W, H    = P.W, P.H
+    local BOX_W   = math.floor(W * 0.85)
     local PADDING = Screen:scaleBySize(28)
+    local INNER_W = BOX_W - 2 * PADDING
     local version = _G.MYTHOS_VERSION or "0.1.0"
 
-    local content = VerticalGroup:new{
-        align = "left",
-        TextWidget:new{ text = "Mythos",     face = Font:getFace("cfont", 22), bold = true },
-        VerticalSpan:new{ width = Screen:scaleBySize(6) },
-        TextWidget:new{ text = "v" .. version, face = Font:getFace("cfont", 16),
-                        fgcolor = Blitbuffer.COLOR_GRAY },
-        VerticalSpan:new{ width = Screen:scaleBySize(18) },
-        TextWidget:new{ text = "tap anywhere to close", face = Font:getFace("cfont", 12),
-                        fgcolor = Blitbuffer.COLOR_LIGHT_GRAY },
+    -- ── Logo ──────────────────────────────────────────────────────────────────
+    local logo_w = nil
+    do
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok_lfs then ok_lfs, lfs = pcall(require, "lfs") end
+        if ok_lfs and lfs.attributes(_LOGO_PATH, "mode") == "file" then
+            local logo_px    = Screen:scaleBySize(62)
+            local ImageWidget = require("ui/widget/imagewidget")
+            logo_w = CenterContainer:new{
+                dimen = Geom:new{ w = INNER_W, h = logo_px },
+                -- alpha = true composites over the white box background,
+                -- so transparent areas show white instead of black
+                ImageWidget:new{
+                    file   = _LOGO_PATH,
+                    width  = logo_px,
+                    height = logo_px,
+                    alpha  = true,
+                },
+            }
+        end
+    end
+
+    -- ── Descriptor text (word-wrapped) ────────────────────────────────────────
+    local TextBoxWidget = require("ui/widget/textboxwidget")
+    local desc = TextBoxWidget:new{
+        text      = "A simple web novel library for KOReader.\nBrowse, track, and export your favourite stories as EPUBs to read offline.",
+        face      = Font:getFace("cfont", 14),
+        width     = INNER_W,
+        alignment = "center",
     }
+
+    -- ── Assemble content ──────────────────────────────────────────────────────
+    local group_args = { align = "center" }
+    if logo_w then
+        group_args[#group_args + 1] = logo_w
+        group_args[#group_args + 1] = VerticalSpan:new{ width = Screen:scaleBySize(14) }
+    end
+    group_args[#group_args + 1] = TextWidget:new{
+        text = "Mythos",
+        face = Font:getFace("cfont", 24),
+        bold = true,
+    }
+    group_args[#group_args + 1] = VerticalSpan:new{ width = Screen:scaleBySize(4) }
+    group_args[#group_args + 1] = TextWidget:new{
+        text    = "v" .. version,
+        face    = Font:getFace("cfont", 15),
+        fgcolor = Blitbuffer.COLOR_GRAY,
+    }
+    group_args[#group_args + 1] = VerticalSpan:new{ width = Screen:scaleBySize(22) }
+    group_args[#group_args + 1] = desc
+    group_args[#group_args + 1] = VerticalSpan:new{ width = Screen:scaleBySize(16) }
+    group_args[#group_args + 1] = TextWidget:new{
+        text    = "github.com/unitreign/Mythos",
+        face    = Font:getFace("cfont", 13),
+        fgcolor = Blitbuffer.COLOR_GRAY,
+    }
+    group_args[#group_args + 1] = VerticalSpan:new{ width = Screen:scaleBySize(22) }
+    group_args[#group_args + 1] = TextWidget:new{
+        text    = "tap anywhere to close",
+        face    = Font:getFace("cfont", 12),
+        fgcolor = Blitbuffer.COLOR_LIGHT_GRAY,
+    }
+
+    local content = VerticalGroup:new(group_args)
     local box = FrameContainer:new{
         bordersize = Screen:scaleBySize(1),
-        radius     = Screen:scaleBySize(14),
+        radius     = Screen:scaleBySize(8),
         background = Blitbuffer.COLOR_WHITE,
         padding    = PADDING,
         content,
     }
-    -- Float box centered over the screen; no background fill so underlying screen shows through
     self[1] = CenterContainer:new{
         dimen = Geom:new{ x = 0, y = 0, w = W, h = H },
         box,

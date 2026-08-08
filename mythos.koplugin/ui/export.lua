@@ -142,6 +142,23 @@ function Export.show(ctx)
         string.format("%d chapter%s selected", ch_cnt, ch_cnt == 1 and "" or "s"),
         { dim = true, callback = function() end }
     ))
+
+    local locked_cnt = 0
+    for _, ch in ipairs(ctx.chapters or {}) do
+        if ch.locked then locked_cnt = locked_cnt + 1 end
+    end
+    if locked_cnt > 0 then
+        table.insert(rows, P.makeRow(
+            string.format("[!] %d locked chapter%s in selection",
+                locked_cnt, locked_cnt == 1 and "" or "s"),
+            { bold = true, callback = function() end }
+        ))
+        table.insert(rows, P.makeRow(
+            "Locked chapters have no accessible content and will export as blank pages.",
+            { dim = true, callback = function() end }
+        ))
+    end
+
     table.insert(rows, P.hairline())
 
     -- Mode selection

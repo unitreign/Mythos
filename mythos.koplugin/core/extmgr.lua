@@ -78,6 +78,20 @@ local function load_ext_file(id)
     return nil
 end
 
+-- ── URL resolver ─────────────────────────────────────────────────────────────
+-- Accepts short GitHub URLs (github.com/user/repo) and full https:// URLs.
+-- Returns resolved, fallback where fallback tries master if main is used.
+
+local function resolve_index_url(url)
+    local owner_repo = url:match("^github%.com/([^/%s]+/[^/%s]+)/?$")
+    if owner_repo then
+        return "https://raw.githubusercontent.com/" .. owner_repo .. "/main/index.json",
+               "https://raw.githubusercontent.com/" .. owner_repo .. "/master/index.json"
+    end
+    if url:match("^https?://") then return url end
+    return "https://" .. url
+end
+
 -- ── Public API ────────────────────────────────────────────────────────────────
 
 function ExtMgr.init()
@@ -141,7 +155,12 @@ function ExtMgr.fetchIndex()
     for _, url in ipairs(repos) do table.insert(all_urls, url) end
 
     for _, url in ipairs(all_urls) do
-        local data = Http.getJson(url)
+        local resolved, fallback = resolve_index_url(url)
+        local data = Http.getJson(resolved)
+        if not data and fallback then
+            logger.dbg("Mythos/ExtMgr: main branch failed, trying master for", url)
+            data = Http.getJson(fallback)
+        end
         if data and type(data) == "table" then
             for _, meta in ipairs(data) do
                 if meta.id then _avail[meta.id] = meta end

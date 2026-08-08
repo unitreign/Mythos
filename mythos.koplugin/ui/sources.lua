@@ -95,27 +95,31 @@ function Sources.build_widget()
             table.insert(rows, P.makeRow(url, { dim = true, callback = function() end }))
         end
     end
-    table.insert(rows, P.makeRow("+ Add Repo URL", {
+    table.insert(rows, P.makeRow("+ Add Repo", {
         bold = true,
         callback = function()
             local dlg
             dlg = InputDialog:new{
                 title      = "Add Extension Repo",
-                input_hint = "https://raw.githubusercontent.com/.../index.json",
+                input_hint = "github.com/username/repo",
                 buttons    = {{
                     {
                         text             = "Add",
                         is_enter_default = true,
                         callback         = function()
-                            local url = dlg:getInputText()
+                            local raw = (dlg:getInputText() or ""):match("^%s*(.-)%s*$")
+                            -- Strip https:// from GitHub URLs so we always store the short form
+                            local to_store = raw:gsub("^https?://(github%.com/)", "%1")
                             UIManager:close(dlg)
-                            if url and url:match("^https?://") then
-                                ExtMgr.addRepo(url)
+                            if to_store ~= "" then
+                                local added = ExtMgr.addRepo(to_store)
                                 UIManager:show(InfoMessage:new{
-                                    text    = "Repo added. Tap Refresh Index to fetch.",
+                                    text    = added
+                                        and "Repo added. Tap Refresh Index to fetch."
+                                        or  "Repo already in list.",
                                     timeout = 3,
                                 })
-                                rebuild()
+                                if added then rebuild() end
                             end
                         end,
                     },

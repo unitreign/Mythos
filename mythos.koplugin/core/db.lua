@@ -189,4 +189,77 @@ function DB.getExportedChapterSet(source_id, novel_path)
     return set
 end
 
+-- ── Chapter list cache ────────────────────────────────────────────────────────
+-- One JSON file per novel: <db_dir>/chapter_cache/<key>.json
+-- key is source_id__novel_path with non-alphanumeric chars replaced by "_".
+
+local chapter_cache_dir = db_dir .. "/chapter_cache"
+local cover_cache_dir   = db_dir .. "/covers"
+
+local function ensure_chapter_cache_dir()
+    ensure_dir()
+    if lfs.attributes(chapter_cache_dir, "mode") ~= "directory" then
+        lfs.mkdir(chapter_cache_dir)
+    end
+end
+
+local function ensure_cover_cache_dir()
+    ensure_dir()
+    if lfs.attributes(cover_cache_dir, "mode") ~= "directory" then
+        lfs.mkdir(cover_cache_dir)
+    end
+end
+
+local function cache_key(source_id, novel_path)
+    return (source_id .. "__" .. novel_path):gsub("[^%w%-]", "_")
+end
+
+function DB.loadChapterCache(source_id, novel_path)
+    local key  = cache_key(source_id, novel_path)
+    local path = chapter_cache_dir .. "/" .. key .. ".json"
+    local f = io.open(path, "r")
+    if not f then return nil end
+    local raw = f:read("*all"); f:close()
+    local ok, data = pcall(JSON.decode, raw)
+    if not ok or not data or not data.chapters then return nil end
+    return data
+end
+
+function DB.saveChapterCache(source_id, novel_path, chapters, total)
+    ensure_chapter_cache_dir()
+    local key  = cache_key(source_id, novel_path)
+    local path = chapter_cache_dir .. "/" .. key .. ".json"
+    local f = io.open(path, "w")
+    if not f then return end
+    f:write(JSON.encode({ chapters = chapters, total = total, saved_at = os.time() }))
+    f:close()
+end
+
+function DB.clearChapterCache(source_id, novel_path)
+    local key  = cache_key(source_id, novel_path)
+    os.remove(chapter_cache_dir .. "/" .. key .. ".json")
+end
+
+-- ── Cover image cache ─────────────────────────────────────────────────────────
+-- Raw image bytes stored as <db_dir>/covers/<key>.img
+
+function DB.loadCoverCache(source_id, novel_path)
+    local key  = cache_key(source_id, novel_path)
+    local path = cover_cache_dir .. "/" .. key .. ".img"
+    if lfs.attributes(path, "mode") ~= "file" then return nil end
+    local f = io.open(path, "rb")
+    if not f then return nil end
+    local data = f:read("*all"); f:close()
+    return data ~= "" and data or nil
+end
+
+function DB.saveCoverCache(source_id, novel_path, data)
+    ensure_cover_cache_dir()
+    local key  = cache_key(source_id, novel_path)
+    local path = cover_cache_dir .. "/" .. key .. ".img"
+    local f = io.open(path, "wb")
+    if not f then return end
+    f:write(data); f:close()
+end
+
 return DB
