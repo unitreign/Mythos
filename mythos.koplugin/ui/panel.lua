@@ -301,15 +301,22 @@ function P.showHamburgerMenu(close_fn)
         VerticalGroup:new(vg_items),
     }
 
-    -- Dropdown widget: painted at menu position, full-screen tap captures outside-close
+    -- Dropdown widget: full-screen for input capture, but box is painted at (menu_x, menu_y).
+    -- InputContainer:paintTo always resets self.dimen.x/y to the x,y UIManager passes (0,0),
+    -- so we must override paintTo to force the child to its correct screen position.
     local DropdownMenu = InputContainer:extend{}
     function DropdownMenu:init()
-        self.dimen = menu_rect
+        self.dimen = Geom:new{ x = 0, y = 0, w = W, h = H }
         self[1]    = menu_box
         self.ges_events = {
             Tap = { GestureRange:new{ ges = "tap",
                     range = Geom:new{ x = 0, y = 0, w = W, h = H } } },
         }
+    end
+    function DropdownMenu:paintTo(bb, x, y)
+        self.dimen.x = x
+        self.dimen.y = y
+        self[1]:paintTo(bb, menu_x, menu_y)
     end
     function DropdownMenu:onTap(_, ges)
         if ges.pos and not ges.pos:intersectWith(menu_rect) then
