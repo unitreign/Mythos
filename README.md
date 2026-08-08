@@ -98,8 +98,8 @@ A few things that are not immediately obvious:
 - **Jump to a page in the chapter list** — in the Chapters tab, tap the page indicator in the middle of the nav bar (e.g. `1 / 315`) to open a dialog where you can type a page number and jump straight there. Handy for long series.
 - **Remove a repo** — in the Sources tab, hold on any repo row to get a remove prompt.
 - **Uninstall an extension** — tap an installed extension to open its settings, where you'll find an Uninstall option. Or hold the row for a quick uninstall prompt.
-- **Force-refresh a novel's chapter list** — on the novel detail page, tap **Refresh Chapter List** to bypass the cache and re-fetch from the source. Useful if a chapter count looks wrong.
-- **Library refresh** — the **Refresh** button at the top of the Library tab checks every tracked novel for new chapters in one go.
+- **Force-refresh a novel's chapter list** — on the novel detail page, tap **Refresh Chapter List** to bypass the cache and re-fetch from the source. Useful if a chapter count looks wrong. 
+- **Library refresh** — the **Refresh** button at the top of the Library tab checks every tracked novel for new chapters in one go. This will take time based on your library. The more tracked books there are, the longer it takes. **Force-refresh a novel's chapter list** is recommended.
 
 ## Extensions
 
