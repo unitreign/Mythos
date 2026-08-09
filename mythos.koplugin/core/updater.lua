@@ -130,14 +130,11 @@ local function parse_release(body)
             end
         end
 
-        local notes = data.body
-        if notes and notes ~= "" then
-            notes = notes:gsub("#+%s*", "")
-                        :gsub("%*%*(.-)%*%*", "%1")
-                        :gsub("`(.-)`",       "%1")
-                        :gsub("\r\n", "\n"):gsub("\r", "\n")
-            if #notes > 500 then notes = notes:sub(1, 497) .. "..." end
-            notes = notes:match("^%s*(.-)%s*$")
+        local notes
+        local raw = data.body or ""
+        local block = raw:match("<!%-%-himythos%-%->(.-)<!%-%-/himythos%-%->")
+        if block and block:match("%S") then
+            notes = block:gsub("\r\n", "\n"):gsub("\r", "\n"):match("^%s*(.-)%s*$")
         end
 
         return {
@@ -153,9 +150,17 @@ local function parse_release(body)
     if not tag then return nil, "could not parse tag_name" end
     local asset_pat = '"browser_download_url"%s*:%s*"([^"]*'
         .. ASSET_NAME:gsub("%.", "%%.") .. '[^"]*)"'
+    local raw_body = body:match('"body"%s*:%s*"(.-[^\\])"') or ""
+    raw_body = raw_body:gsub("\\n", "\n"):gsub("\\r", ""):gsub('\\"', '"')
+    local fb_notes
+    local fb_block = raw_body:match("<!%-%-himythos%-%->(.-)<!%-%-/himythos%-%->")
+    if fb_block and fb_block:match("%S") then
+        fb_notes = fb_block:match("^%s*(.-)%s*$")
+    end
     return {
         version      = tag:match("v?(.*)"),
         download_url = body:match(asset_pat),
+        notes        = fb_notes,
     }
 end
 

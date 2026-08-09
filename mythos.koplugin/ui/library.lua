@@ -8,23 +8,30 @@ local P           = require("ui.panel")
 local Library = {}
 Library.on_novel_tap = nil
 
-local _page = 1
-
-local function close_all()
-    if _G.mythos_close_all then _G.mythos_close_all() end
-end
+local _page     = 1
+local _fetch_id = 0
 
 local function rebuild()
     require("ui.main_widget").show("library")
 end
 
-local function do_refresh()
+local function do_refresh_confirmed()
+    _fetch_id = _fetch_id + 1
+    local my_id = _fetch_id
+
     local NetworkMgr = require("ui/network/manager")
     NetworkMgr:runWhenConnected(function()
+        if my_id ~= _fetch_id then return end
+
         local ExtMgr  = require("core.extmgr")
         local loading = InfoMessage:new{ text = "Checking for updates…" }
         UIManager:show(loading)
         UIManager:scheduleIn(0.1, function()
+            if my_id ~= _fetch_id then
+                UIManager:close(loading)
+                return
+            end
+
             local novels  = DB.getAll()
             local updated = 0
             for _, novel in ipairs(novels) do
@@ -53,7 +60,16 @@ local function do_refresh()
     end)
 end
 
-function Library.build_widget()
+local function do_refresh()
+    UIManager:show(ConfirmBox:new{
+        text        = "This checks every tracked novel for new chapters.\n\nThe more novels you have tracked, the longer this takes. To update a specific novel only, open it individually instead.\n\nContinue?",
+        ok_text     = "Refresh All",
+        cancel_text = "Cancel",
+        ok_callback = do_refresh_confirmed,
+    })
+end
+
+function Library.build_rows()
     local MythosUI = require("ui.main_widget")
 
     local novels = DB.getByFilter("all")
@@ -130,7 +146,7 @@ function Library.build_widget()
         on_next   = _page < max_pages and function() _page = _page + 1; rebuild() end or nil,
     } or nil
 
-    return P.showTabPanel("library", all_rows, "MYTHOS", close_all, nav)
+    return all_rows, "MYTHOS", nav
 end
 
 function Library.close() end

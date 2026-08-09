@@ -69,7 +69,7 @@ end
 
 -- ── Widget builder ────────────────────────────────────────────────────────────
 
-function Sources.build_widget()
+function Sources.build_rows()
     local rows = {}
 
     -- Refresh
@@ -231,7 +231,7 @@ function Sources.build_widget()
         on_next   = _page < max_pages and function() _page = _page + 1; rebuild() end or nil,
     } or nil
 
-    return P.showTabPanel("sources", visible, "Sources", close_all, nav)
+    return visible, "Sources", nav
 end
 
 function Sources.close() end

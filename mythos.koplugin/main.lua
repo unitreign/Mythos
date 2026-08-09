@@ -1,5 +1,5 @@
 -- Mythos — main plugin entry point.
-_G.MYTHOS_VERSION = "0.2.0"
+_G.MYTHOS_VERSION = "0.3.0"
 
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager       = require("ui/uimanager")
@@ -30,16 +30,10 @@ local function open_mythos()
         if not _ready then
             ExtMgr.init()
 
-            -- Wire tab widget getters
-            MythosUI.get_library_widget = function()
-                return Library.build_widget()
-            end
-            MythosUI.get_browse_widget = function()
-                return Browse.build_widget()
-            end
-            MythosUI.get_sources_widget = function()
-                return Sources.build_widget()
-            end
+            -- Wire tab row builders
+            MythosUI.get_library_rows = function() return Library.build_rows() end
+            MythosUI.get_browse_rows  = function() return Browse.build_rows()  end
+            MythosUI.get_sources_rows = function() return Sources.build_rows() end
 
             -- Library: tapping a novel opens Detail above the library panel
             Library.on_novel_tap = function(novel)

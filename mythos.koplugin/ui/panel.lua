@@ -26,6 +26,12 @@ local _LOGO_PATH   = _PLUGIN_ROOT .. "/resources/logo.png"
 
 local P = {}
 
+-- Tracks consecutive partial (page-turn) refreshes so we can promote to
+-- "flashui" every N turns to clear e-ink ghosting.  Must live here because
+-- FullScreenPanel instances are recreated on every rebuild().
+local _partial_count    = 0
+local _FLASHUI_INTERVAL = 6
+
 -- ── Dimensions ────────────────────────────────────────────────────────────────
 
 P.W         = Screen:getWidth()
@@ -286,8 +292,12 @@ function AboutWidget:init()
 end
 function AboutWidget:onTap()    UIManager:close(self); return true end
 function AboutWidget:onClose()  UIManager:close(self); return true end
-function AboutWidget:onShow()         UIManager:setDirty(self, "partial") end
-function AboutWidget:onCloseWidget()  UIManager:setDirty(nil,  "partial") end
+function AboutWidget:onShow()
+    UIManager:setDirty(self, function() return "ui", self.dimen end)
+end
+function AboutWidget:onCloseWidget()
+    UIManager:setDirty(self, function() return "partial", self.dimen end)
+end
 
 -- ── Hamburger menu ────────────────────────────────────────────────────────────
 
@@ -317,10 +327,6 @@ function P.showHamburgerMenu(close_fn)
             UIManager:show(AboutWidget:new{})
         end },
         { "Check for Updates",
-            function()
-                close_menu()
-                UIManager:show(InfoMessage:new{ text = "This feature is disabled for now.", timeout = 3 })
-            end,
             function()
                 close_menu()
                 require("core.updater").checkForUpdates()
@@ -421,8 +427,12 @@ function P.showHamburgerMenu(close_fn)
         end
         return true
     end
-    function DropdownMenu:onShow()        UIManager:setDirty(self, "ui") end
-    function DropdownMenu:onCloseWidget() UIManager:setDirty(nil,  "partial") end
+    function DropdownMenu:onShow()
+        UIManager:setDirty(self, function() return "ui", self.dimen end)
+    end
+    function DropdownMenu:onCloseWidget()
+        UIManager:setDirty(self, function() return "partial", self.dimen end)
+    end
 
     dropdown = DropdownMenu:new{}
     UIManager:show(dropdown)
@@ -433,7 +443,7 @@ end
 -- on_close: ✕ callback (nil = no close button)
 -- on_menu:  ≡ callback (nil = no menu button); overrides on_close if both set
 
-function P.makeTitleBar(title, on_back, on_close, on_menu)
+function P.makeTitleBar(title, on_back, on_close, on_menu, on_refresh)
     local H     = P.TITLE_H
     local W     = P.W
     local face  = Font:getFace("cfont", 18)
@@ -455,11 +465,19 @@ function P.makeTitleBar(title, on_back, on_close, on_menu)
     end
 
     local function spacer()
-        -- LineWidget has a getSize() that returns dimen directly (no child required)
         return LineWidget:new{
             dimen      = Geom:new{ w = BTN_W, h = H },
             background = Blitbuffer.COLOR_WHITE,
         }
+    end
+
+    local left
+    if on_back then
+        left = btnFrame("←", on_back)
+    elseif on_refresh then
+        left = btnFrame("↺", on_refresh)
+    else
+        left = spacer()
     end
 
     local title_widget = TextWidget:new{ text = title or "", face = face, bold = true }
@@ -470,9 +488,9 @@ function P.makeTitleBar(title, on_back, on_close, on_menu)
     }
 
     return HorizontalGroup:new{
-        on_back  and btnFrame("←",           on_back)  or spacer(),
+        left,
         title_frame,
-        right_cb and btnFrame(right_glyph,   right_cb) or spacer(),
+        right_cb and btnFrame(right_glyph, right_cb) or spacer(),
     }
 end
 
@@ -707,11 +725,37 @@ function FullScreenPanel:init()
 end
 
 function FullScreenPanel:onShow()
-    UIManager:setDirty(self, self.partial and "partial" or "full")
+    if self.partial then
+        -- showCustomTabPanel page turns (detail/chapter view)
+        _partial_count = _partial_count + 1
+        local rtype = (_partial_count % _FLASHUI_INTERVAL == 0) and "flashui" or "partial"
+        UIManager:setDirty(self, function() return rtype, self.dimen end)
+    else
+        _partial_count = 0
+        UIManager:setDirty(self, function() return "full", self.dimen end)
+    end
 end
 
 function FullScreenPanel:onCloseWidget()
-    UIManager:setDirty(nil, self.partial and "partial" or "full")
+    local rtype = self.partial and "partial" or "full"
+    UIManager:setDirty(self, function() return rtype, self.dimen end)
+end
+
+-- Swap the body in-place without closing/reopening the panel.
+-- same_tab=true  → page turn within a tab  → "partial" (fast, no flash)
+-- same_tab=false → tab switch              → "ui"      (clean, no full flash)
+function FullScreenPanel:swapBody(new_body, new_close_fn, same_tab)
+    self[1][1]          = new_body
+    self.close_callback = new_close_fn
+    local rtype
+    if same_tab then
+        _partial_count = _partial_count + 1
+        rtype = (_partial_count % _FLASHUI_INTERVAL == 0) and "flashui" or "partial"
+    else
+        _partial_count = 0
+        rtype = "ui"
+    end
+    UIManager:setDirty(self, function() return rtype, self.dimen end)
 end
 
 function FullScreenPanel:onClose()
@@ -743,20 +787,28 @@ end
 
 -- ── Panel builders ────────────────────────────────────────────────────────────
 
--- Build and show a main tab screen (Library / Browse / Sources).
--- ≡ hamburger menu (About / Check for Updates / Quit) replaces the plain ✕.
--- nav (optional) = { page, max_pages, on_prev, on_next } — shows nav bar above tab bar.
-function P.showTabPanel(active_id, rows, title, close_fn, nav)
+-- Builds the body VerticalGroup for a main tab screen.
+-- Separated from show so main_widget can swap it in-place for page turns / tab switches.
+local function _buildTabBody(active_id, rows, title, close_fn, nav)
     local content_h  = nav and P.CONTENT_H_NAV or P.CONTENT_H
     local menu_fn    = function() P.showHamburgerMenu(close_fn) end
-    local body = VerticalGroup:new{
+    local refresh_fn = function() UIManager:setDirty(nil, "full") end
+    return VerticalGroup:new{
         align = "left",
-        P.makeTitleBar(title, nil, nil, menu_fn),
+        P.makeTitleBar(title, nil, nil, menu_fn, refresh_fn),
         P.hairline(),
         P.contentFrame(rows, content_h),
         nav and P.makeNavBar(nav) or P.spacer(0),
         P.makeTabBar(active_id),
     }
+end
+
+P.buildTabBody = _buildTabBody
+
+-- Build and show a main tab screen (Library / Browse / Sources).
+-- For the initial show only — subsequent rebuilds go via FullScreenPanel:swapBody.
+function P.showTabPanel(active_id, rows, title, close_fn, nav)
+    local body  = _buildTabBody(active_id, rows, title, close_fn, nav)
     local panel = FullScreenPanel:new{ body = body, close_callback = close_fn }
     UIManager:show(panel)
     return panel

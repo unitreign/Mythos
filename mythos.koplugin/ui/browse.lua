@@ -15,9 +15,7 @@ Browse._novels    = {}
 Browse._page      = 1
 Browse._search    = nil
 
-local function close_all()
-    if _G.mythos_close_all then _G.mythos_close_all() end
-end
+local _fetch_id = 0
 
 local function rebuild()
     require("ui.main_widget").show("browse")
@@ -59,7 +57,7 @@ local function build_source_picker_rows()
             dim = true,
             callback = function() MythosUI.show("sources") end,
         }))
-        return rows, "Browse — Select Source"
+        return rows, "Browse"
     end
 
     table.insert(rows, P.makeRow("-- Installed Sources --", { dim = true, callback = function() end }))
@@ -75,7 +73,7 @@ local function build_source_picker_rows()
             end,
         }))
     end
-    return rows, "Browse — Select Source"
+    return rows, "Browse"
 end
 
 local function build_novel_list_rows()
@@ -136,7 +134,7 @@ local function build_novel_list_rows()
     return rows, title, nav
 end
 
-function Browse.build_widget()
+function Browse.build_rows()
     local rows, title, nav
     if Browse._state == "list" then
         rows, title, nav = build_novel_list_rows()
@@ -151,7 +149,7 @@ function Browse.build_widget()
         table.insert(visible, rows[i])
     end
 
-    return P.showTabPanel("browse", visible, title, close_all, nav)
+    return visible, title, nav
 end
 
 function Browse.fetchAndShow(source_id, page, search_term)
@@ -164,11 +162,21 @@ function Browse.fetchAndShow(source_id, page, search_term)
         return
     end
 
+    _fetch_id = _fetch_id + 1
+    local my_id = _fetch_id
+
     NetworkMgr:runWhenConnected(function()
+        if my_id ~= _fetch_id then return end
+
         local loading = InfoMessage:new{ text = "Loading…" }
         UIManager:show(loading)
 
         UIManager:scheduleIn(0.1, function()
+            if my_id ~= _fetch_id then
+                UIManager:close(loading)
+                return
+            end
+
             local novels, err
             if search_term and search_term ~= "" then
                 local ok, res = pcall(ext.searchNovels, ext, search_term, page)
